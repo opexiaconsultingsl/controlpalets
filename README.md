@@ -1,2 +1,0 @@
-# controlpalets
-Control Palets Dulca
