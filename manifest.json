@@ -1,0 +1,9 @@
+{
+  "name": "Dulca Registro de Palets",
+  "short_name": "Dulca Palets",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#f7f3ed",
+  "theme_color": "#c72724",
+  "icons": []
+}
