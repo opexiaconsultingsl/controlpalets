@@ -1,0 +1,737 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <title>Dulca · Registro de Palets</title>
+
+  <style>
+    :root {
+      --dulca-red: #c72724;
+      --dulca-red-dark: #8f1d1b;
+      --dulca-gold: #e2a12a;
+      --bg: #f7f3ed;
+      --text: #231f20;
+      --muted: #6b5f58;
+      --white: #ffffff;
+      --border: #eadfce;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: linear-gradient(180deg, #fff7eb 0%, var(--bg) 100%);
+      color: var(--text);
+    }
+
+    .app {
+      max-width: 1050px;
+      margin: 0 auto;
+      padding: 22px;
+    }
+
+    .topbar {
+      background: var(--white);
+      border-radius: 24px;
+      padding: 20px;
+      margin-bottom: 18px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 18px;
+      box-shadow: 0 14px 35px rgba(143, 29, 27, .12);
+      border: 1px solid var(--border);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 18px;
+    }
+
+    .brand img {
+      width: 190px;
+      max-width: 42vw;
+      height: auto;
+      display: block;
+    }
+
+    .brand h1 {
+      margin: 0;
+      font-size: 28px;
+      color: var(--dulca-red-dark);
+    }
+
+    .brand p {
+      margin: 4px 0 0;
+      color: var(--muted);
+    }
+
+    .status {
+      padding: 10px 16px;
+      border-radius: 999px;
+      background: #fee2e2;
+      color: var(--dulca-red-dark);
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    .status.online {
+      background: #dcfce7;
+      color: #166534;
+    }
+
+    .card {
+      background: var(--white);
+      border-radius: 22px;
+      padding: 22px;
+      margin-bottom: 18px;
+      border: 1px solid var(--border);
+      box-shadow: 0 10px 28px rgba(70, 42, 20, .08);
+    }
+
+    h2 {
+      margin: 0 0 16px;
+      color: var(--dulca-red-dark);
+      font-size: 22px;
+    }
+
+    label {
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+      font-weight: 750;
+      color: var(--text);
+    }
+
+    input,
+    select {
+      width: 100%;
+      padding: 13px 14px;
+      border-radius: 13px;
+      border: 1px solid #d9c9b3;
+      font-size: 16px;
+      background: #fffdfa;
+    }
+
+    input:focus,
+    select:focus {
+      outline: 3px solid rgba(226, 161, 42, .28);
+      border-color: var(--dulca-gold);
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+    }
+
+    .section-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 14px;
+      margin: 20px 0 12px;
+    }
+
+    .section-head h3 {
+      margin: 0;
+      color: var(--dulca-red-dark);
+    }
+
+    .line {
+      display: grid;
+      grid-template-columns: 1fr 160px auto;
+      gap: 12px;
+      align-items: end;
+      padding: 14px;
+      border-radius: 16px;
+      border: 1px solid var(--border);
+      background: #fffaf2;
+      margin-bottom: 12px;
+    }
+
+    button {
+      border: 0;
+      border-radius: 13px;
+      padding: 13px 17px;
+      font-weight: 850;
+      cursor: pointer;
+      font-size: 15px;
+      transition: .2s;
+    }
+
+    .primary {
+      background: var(--dulca-red);
+      color: white;
+      box-shadow: 0 8px 18px rgba(199, 39, 36, .22);
+    }
+
+    .primary:hover {
+      background: var(--dulca-red-dark);
+    }
+
+    .secondary {
+      background: var(--dulca-gold);
+      color: #3b2600;
+    }
+
+    .secondary:hover {
+      filter: brightness(.96);
+    }
+
+    .danger {
+      background: #fee2e2;
+      color: var(--dulca-red-dark);
+    }
+
+    .danger:hover {
+      background: #fecaca;
+    }
+
+    .actions {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-top: 18px;
+    }
+
+    .pending-item {
+      background: #fffaf2;
+      border: 1px solid var(--border);
+      border-radius: 15px;
+      padding: 13px;
+      margin-bottom: 10px;
+    }
+
+    .muted {
+      color: var(--muted);
+      margin: 0;
+    }
+
+    @media (max-width: 860px) {
+      .grid {
+        grid-template-columns: 1fr;
+      }
+
+      .line {
+        grid-template-columns: 1fr;
+      }
+
+      .topbar,
+      .brand,
+      .section-head {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .brand img {
+        width: 170px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <main class="app">
+
+    <header class="topbar">
+      <div class="brand">
+
+        <!-- CAMBIA EL NOMBRE SI QUIERES -->
+        <img src="Logo Dulca Familiar_Mesa de trabajo.png" alt="Dulca">
+
+        <div>
+          <h1>Registro de Palets</h1>
+          <p>Control offline de movimientos logísticos</p>
+        </div>
+      </div>
+
+      <div id="status" class="status">
+        Offline
+      </div>
+    </header>
+
+    <section class="card">
+
+      <h2>Nuevo movimiento</h2>
+
+      <form id="form">
+
+        <div class="grid">
+
+          <label>
+            Fecha documento
+            <input id="fechaDocumento" type="date" required>
+          </label>
+
+          <label>
+            Lugar
+            <input
+              id="origenDestino"
+              type="text"
+              placeholder="Cliente / Almacén / Proveedor"
+              required
+            >
+          </label>
+
+          <label>
+            Operación
+            <select id="operacion" required>
+              <option value="Descarga">Descarga</option>
+              <option value="Carga">Carga</option>
+            </select>
+          </label>
+
+        </div>
+
+        <div class="section-head">
+          <h3>Tipos de palet</h3>
+
+          <button
+            type="button"
+            class="secondary"
+            id="addLine"
+          >
+            ➕ Añadir tipo
+          </button>
+        </div>
+
+        <div id="lines"></div>
+
+        <div class="actions">
+
+          <button type="submit" class="primary">
+            💾 Guardar movimiento
+          </button>
+
+          <button
+            type="button"
+            class="secondary"
+            id="syncNow"
+          >
+            🔄 Sincronizar
+          </button>
+
+        </div>
+
+      </form>
+
+    </section>
+
+    <section class="card">
+
+      <h2>Pendientes de sincronizar</h2>
+
+      <p class="muted">
+        <strong id="pendingCount">0</strong>
+        registros guardados localmente.
+      </p>
+
+      <div id="pendingList"></div>
+
+    </section>
+
+  </main>
+
+  <template id="lineTemplate">
+
+    <div class="line">
+
+      <label>
+        Tipo de palet
+
+        <select class="tipoPalet" required>
+        </select>
+      </label>
+
+      <label>
+        Cantidad
+
+        <input
+          class="cantidad"
+          type="number"
+          min="1"
+          step="1"
+          required
+        >
+      </label>
+
+      <button
+        type="button"
+        class="danger removeLine"
+      >
+        🗑️ Eliminar
+      </button>
+
+    </div>
+
+  </template>
+
+  <script>
+
+    // ==========================================
+    // CONFIGURACIÓN
+    // ==========================================
+
+    const APPS_SCRIPT_URL = "PEGA_AQUI_TU_URL_DE_APPS_SCRIPT";
+
+    const PALET_TYPES = [
+      "80x120 LPR",
+      "80x60 Dusseldorf",
+      "Chep"
+    ];
+
+    const STORAGE_QUEUE = "dulca_palets_queue_v1";
+
+    // ==========================================
+    // ELEMENTOS
+    // ==========================================
+
+    const form = document.getElementById("form");
+    const lines = document.getElementById("lines");
+    const template = document.getElementById("lineTemplate");
+    const statusEl = document.getElementById("status");
+    const pendingCount = document.getElementById("pendingCount");
+    const pendingList = document.getElementById("pendingList");
+
+    // ==========================================
+    // STORAGE
+    // ==========================================
+
+    function getQueue() {
+      return JSON.parse(
+        localStorage.getItem(STORAGE_QUEUE) || "[]"
+      );
+    }
+
+    function setQueue(queue) {
+      localStorage.setItem(
+        STORAGE_QUEUE,
+        JSON.stringify(queue)
+      );
+
+      renderPending();
+    }
+
+    // ==========================================
+    // UI
+    // ==========================================
+
+    function addPaletLine() {
+
+      const node = template.content.cloneNode(true);
+
+      const select = node.querySelector(".tipoPalet");
+
+      PALET_TYPES.forEach(type => {
+
+        const option = document.createElement("option");
+
+        option.value = type;
+        option.textContent = type;
+
+        select.appendChild(option);
+
+      });
+
+      node
+        .querySelector(".removeLine")
+        .addEventListener("click", event => {
+
+          if (lines.children.length === 1) {
+
+            alert(
+              "Debe quedar al menos un tipo de palet."
+            );
+
+            return;
+          }
+
+          event.target.closest(".line").remove();
+
+        });
+
+      lines.appendChild(node);
+
+    }
+
+    function updateStatus() {
+
+      const online = navigator.onLine;
+
+      statusEl.textContent = online
+        ? "🟢 Online"
+        : "🔴 Offline";
+
+      statusEl.classList.toggle("online", online);
+
+    }
+
+    function renderPending() {
+
+      const queue = getQueue();
+
+      pendingCount.textContent = queue.length;
+
+      if (!queue.length) {
+
+        pendingList.innerHTML =
+          "<p class='muted'>No hay registros pendientes.</p>";
+
+        return;
+      }
+
+      pendingList.innerHTML = queue.map(item => `
+
+        <div class="pending-item">
+
+          <strong>
+            ${item.fechaDocumento}
+            ·
+            ${item.operacion}
+            ·
+            ${item.origenDestino}
+          </strong>
+
+          <br>
+
+          ${item.tipoPalet}
+          ·
+          Cantidad: ${item.cantidad}
+
+        </div>
+
+      `).join("");
+
+    }
+
+    // ==========================================
+    // DATOS
+    // ==========================================
+
+    function buildRecords() {
+
+      const fechaDocumento =
+        document.getElementById("fechaDocumento").value;
+
+      const origenDestino =
+        document.getElementById("origenDestino").value.trim();
+
+      const operacion =
+        document.getElementById("operacion").value;
+
+      const movementId = crypto.randomUUID();
+
+      const createdAt = new Date().toISOString();
+
+      return [...document.querySelectorAll(".line")]
+        .map(line => ({
+
+          id: crypto.randomUUID(),
+
+          movementId,
+
+          fechaDocumento,
+
+          origenDestino,
+
+          operacion,
+
+          tipoPalet:
+            line.querySelector(".tipoPalet").value,
+
+          cantidad:
+            Number(line.querySelector(".cantidad").value),
+
+          createdAt,
+
+          syncedAt: ""
+
+        }));
+
+    }
+
+    // ==========================================
+    // SYNC
+    // ==========================================
+
+    async function syncQueue() {
+
+      if (!APPS_SCRIPT_URL) {
+
+        alert(
+          "URL Apps Script no configurada."
+        );
+
+        return;
+      }
+
+      if (!navigator.onLine) {
+
+        alert(
+          "Sin conexión. Los datos siguen guardados localmente."
+        );
+
+        return;
+      }
+
+      const queue = getQueue();
+
+      if (!queue.length) {
+
+        alert(
+          "No hay registros pendientes."
+        );
+
+        return;
+      }
+
+      const failed = [];
+
+      for (const record of queue) {
+
+        try {
+
+          await fetch(APPS_SCRIPT_URL, {
+
+            method: "POST",
+
+            mode: "no-cors",
+
+            headers: {
+              "Content-Type": "text/plain;charset=utf-8"
+            },
+
+            body: JSON.stringify({
+
+              ...record,
+
+              syncedAt: new Date().toISOString()
+
+            })
+
+          });
+
+        } catch {
+
+          failed.push(record);
+
+        }
+
+      }
+
+      setQueue(failed);
+
+      alert(
+
+        failed.length
+
+          ? `Sincronización parcial. Pendientes: ${failed.length}`
+
+          : "Sincronización enviada correctamente."
+
+      );
+
+    }
+
+    // ==========================================
+    // EVENTOS
+    // ==========================================
+
+    form.addEventListener("submit", event => {
+
+      event.preventDefault();
+
+      const records = buildRecords();
+
+      if (!records.length) {
+
+        alert(
+          "Añade al menos una línea."
+        );
+
+        return;
+      }
+
+      setQueue([
+
+        ...getQueue(),
+
+        ...records
+
+      ]);
+
+      form.reset();
+
+      document.getElementById("fechaDocumento").value =
+        new Date().toISOString().slice(0, 10);
+
+      lines.innerHTML = "";
+
+      addPaletLine();
+
+      if (navigator.onLine) {
+
+        syncQueue();
+
+      } else {
+
+        alert(
+          "Movimiento guardado offline."
+        );
+
+      }
+
+    });
+
+    document
+      .getElementById("addLine")
+      .addEventListener(
+        "click",
+        addPaletLine
+      );
+
+    document
+      .getElementById("syncNow")
+      .addEventListener(
+        "click",
+        syncQueue
+      );
+
+    window.addEventListener("online", () => {
+
+      updateStatus();
+
+      syncQueue();
+
+    });
+
+    window.addEventListener(
+      "offline",
+      updateStatus
+    );
+
+    // ==========================================
+    // INIT
+    // ==========================================
+
+    document.getElementById("fechaDocumento").value =
+      new Date().toISOString().slice(0, 10);
+
+    addPaletLine();
+
+    renderPending();
+
+    updateStatus();
+
+  </script>
+
+</body>
+</html>
