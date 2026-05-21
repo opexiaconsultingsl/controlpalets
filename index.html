@@ -6,6 +6,9 @@
 
   <title>Dulca · Registro de Palets</title>
 
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#c72724">
+
   <style>
     :root {
       --dulca-red: #c72724;
@@ -127,7 +130,7 @@
 
     .grid {
       display: grid;
-      grid-template-columns: repeat(3, 1fr);
+      grid-template-columns: repeat(4, 1fr);
       gap: 16px;
     }
 
@@ -214,6 +217,12 @@
       margin: 0;
     }
 
+    @media (max-width: 1000px) {
+      .grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
     @media (max-width: 860px) {
       .grid {
         grid-template-columns: 1fr;
@@ -243,8 +252,6 @@
 
     <header class="topbar">
       <div class="brand">
-
-        <!-- CAMBIA EL NOMBRE SI QUIERES -->
         <img src="Logo Dulca Familiar_Mesa de trabajo.png" alt="Dulca">
 
         <div>
@@ -272,11 +279,21 @@
           </label>
 
           <label>
+            Nº de Albarán
+            <input
+              id="numeroAlbaran"
+              type="text"
+              placeholder="Ej: ALB-2026-001"
+              required
+            >
+          </label>
+
+          <label>
             Lugar
             <input
               id="origenDestino"
               type="text"
-              placeholder="Cliente / Almacén / Proveedor"
+              placeholder="Cliente / Origen / Destino"
               required
             >
           </label>
@@ -346,14 +363,11 @@
 
       <label>
         Tipo de palet
-
-        <select class="tipoPalet" required>
-        </select>
+        <select class="tipoPalet" required></select>
       </label>
 
       <label>
         Cantidad
-
         <input
           class="cantidad"
           type="number"
@@ -375,24 +389,21 @@
   </template>
 
   <script>
-
-    // ==========================================
-    // CONFIGURACIÓN
-    // ==========================================
-
     const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxYQapL6YBZYKvK8yoPrdXA9IzPhSsqEKWf0M4o9WR4IR8MpdWS2byiJRb4ea3v6iQRVw/exec";
 
     const PALET_TYPES = [
-      "80x120 LPR",
+      "LPR 80x120 madera",
+      "LPR 100x120 madera BROMTON",
+      "LPR quarter palets",
       "80x60 Dusseldorf",
-      "Chep"
+      "Chep 80x120 madera",
+      "Chep 80x120 plástico",
+      "Chep 100x120 plástico",
+      "Chep 100x120 madera",
+      "Chep quarter 40x60"
     ];
 
     const STORAGE_QUEUE = "dulca_palets_queue_v1";
-
-    // ==========================================
-    // ELEMENTOS
-    // ==========================================
 
     const form = document.getElementById("form");
     const lines = document.getElementById("lines");
@@ -401,69 +412,45 @@
     const pendingCount = document.getElementById("pendingCount");
     const pendingList = document.getElementById("pendingList");
 
-    // ==========================================
-    // STORAGE
-    // ==========================================
-
     function getQueue() {
-      return JSON.parse(
-        localStorage.getItem(STORAGE_QUEUE) || "[]"
-      );
+      return JSON.parse(localStorage.getItem(STORAGE_QUEUE) || "[]");
     }
 
     function setQueue(queue) {
-      localStorage.setItem(
-        STORAGE_QUEUE,
-        JSON.stringify(queue)
-      );
-
+      localStorage.setItem(STORAGE_QUEUE, JSON.stringify(queue));
       renderPending();
     }
 
-    // ==========================================
-    // UI
-    // ==========================================
+    function escapeHtml(value) {
+      return String(value ?? "").replace(/[&<>"']/g, char => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#039;"
+      }[char]));
+    }
 
     function addPaletLine() {
-
       const node = template.content.cloneNode(true);
-
       const select = node.querySelector(".tipoPalet");
 
       PALET_TYPES.forEach(type => {
-
         const option = document.createElement("option");
-
         option.value = type;
         option.textContent = type;
-
         select.appendChild(option);
-
       });
 
-      node
-        .querySelector(".removeLine")
-        .addEventListener("click", event => {
-
-          if (lines.children.length === 1) {
-
-            alert(
-              "Debe quedar al menos un tipo de palet."
-            );
-
-            return;
-          }
-
-          event.target.closest(".line").remove();
-
-        });
+      node.querySelector(".removeLine").addEventListener("click", event => {
+        if (lines.children.length <= 1) return;
+        event.target.closest(".line").remove();
+      });
 
       lines.appendChild(node);
-
     }
 
     function updateStatus() {
-
       const online = navigator.onLine;
 
       statusEl.textContent = online
@@ -471,55 +458,40 @@
         : "🔴 Offline";
 
       statusEl.classList.toggle("online", online);
-
     }
 
     function renderPending() {
-
       const queue = getQueue();
 
       pendingCount.textContent = queue.length;
 
       if (!queue.length) {
-
         pendingList.innerHTML =
           "<p class='muted'>No hay registros pendientes.</p>";
-
         return;
       }
 
       pendingList.innerHTML = queue.map(item => `
-
         <div class="pending-item">
-
           <strong>
-            ${item.fechaDocumento}
-            ·
-            ${item.operacion}
-            ·
-            ${item.origenDestino}
+            ${escapeHtml(item.fechaDocumento)}
+            · Alb. ${escapeHtml(item.numeroAlbaran)}
+            · ${escapeHtml(item.operacion)}
+            · ${escapeHtml(item.origenDestino)}
           </strong>
-
           <br>
-
-          ${item.tipoPalet}
-          ·
-          Cantidad: ${item.cantidad}
-
+          ${escapeHtml(item.tipoPalet)}
+          · Cantidad: ${escapeHtml(item.cantidad)}
         </div>
-
       `).join("");
-
     }
 
-    // ==========================================
-    // DATOS
-    // ==========================================
-
     function buildRecords() {
-
       const fechaDocumento =
         document.getElementById("fechaDocumento").value;
+
+      const numeroAlbaran =
+        document.getElementById("numeroAlbaran").value.trim();
 
       const origenDestino =
         document.getElementById("origenDestino").value.trim();
@@ -528,144 +500,73 @@
         document.getElementById("operacion").value;
 
       const movementId = crypto.randomUUID();
-
       const createdAt = new Date().toISOString();
 
       return [...document.querySelectorAll(".line")]
         .map(line => ({
-
           id: crypto.randomUUID(),
-
           movementId,
-
           fechaDocumento,
-
+          numeroAlbaran,
           origenDestino,
-
           operacion,
-
-          tipoPalet:
-            line.querySelector(".tipoPalet").value,
-
-          cantidad:
-            Number(line.querySelector(".cantidad").value),
-
+          tipoPalet: line.querySelector(".tipoPalet").value,
+          cantidad: Number(line.querySelector(".cantidad").value),
           createdAt,
-
           syncedAt: ""
-
-        }));
-
+        }))
+        .filter(record =>
+          record.fechaDocumento &&
+          record.numeroAlbaran &&
+          record.origenDestino &&
+          record.operacion &&
+          record.tipoPalet &&
+          Number.isFinite(record.cantidad) &&
+          record.cantidad > 0
+        );
     }
 
-    // ==========================================
-    // SYNC
-    // ==========================================
-
     async function syncQueue() {
-
-      if (!APPS_SCRIPT_URL) {
-
-        alert(
-          "URL Apps Script no configurada."
-        );
-
-        return;
-      }
-
-      if (!navigator.onLine) {
-
-        alert(
-          "Sin conexión. Los datos siguen guardados localmente."
-        );
-
-        return;
-      }
+      if (!APPS_SCRIPT_URL) return;
+      if (!navigator.onLine) return;
 
       const queue = getQueue();
 
-      if (!queue.length) {
-
-        alert(
-          "No hay registros pendientes."
-        );
-
-        return;
-      }
+      if (!queue.length) return;
 
       const failed = [];
 
       for (const record of queue) {
-
         try {
-
           await fetch(APPS_SCRIPT_URL, {
-
             method: "POST",
-
             mode: "no-cors",
-
             headers: {
               "Content-Type": "text/plain;charset=utf-8"
             },
-
             body: JSON.stringify({
-
               ...record,
-
               syncedAt: new Date().toISOString()
-
             })
-
           });
-
         } catch {
-
           failed.push(record);
-
         }
-
       }
 
       setQueue(failed);
-
-      alert(
-
-        failed.length
-
-          ? `Sincronización parcial. Pendientes: ${failed.length}`
-
-          : "Sincronización enviada correctamente."
-
-      );
-
     }
 
-    // ==========================================
-    // EVENTOS
-    // ==========================================
-
     form.addEventListener("submit", event => {
-
       event.preventDefault();
 
       const records = buildRecords();
 
-      if (!records.length) {
-
-        alert(
-          "Añade al menos una línea."
-        );
-
-        return;
-      }
+      if (!records.length) return;
 
       setQueue([
-
         ...getQueue(),
-
         ...records
-
       ]);
 
       form.reset();
@@ -678,59 +579,35 @@
       addPaletLine();
 
       if (navigator.onLine) {
-
         syncQueue();
-
-      } else {
-
-        alert(
-          "Movimiento guardado offline."
-        );
-
       }
-
     });
 
     document
       .getElementById("addLine")
-      .addEventListener(
-        "click",
-        addPaletLine
-      );
+      .addEventListener("click", addPaletLine);
 
     document
       .getElementById("syncNow")
-      .addEventListener(
-        "click",
-        syncQueue
-      );
+      .addEventListener("click", syncQueue);
 
     window.addEventListener("online", () => {
-
       updateStatus();
-
       syncQueue();
-
     });
 
-    window.addEventListener(
-      "offline",
-      updateStatus
-    );
-
-    // ==========================================
-    // INIT
-    // ==========================================
+    window.addEventListener("offline", updateStatus);
 
     document.getElementById("fechaDocumento").value =
       new Date().toISOString().slice(0, 10);
 
     addPaletLine();
-
     renderPending();
-
     updateStatus();
 
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("./service-worker.js");
+    }
   </script>
 
 </body>
