@@ -1,4 +1,4 @@
-const CACHE_NAME = "dulca-palets-v1";
+const CACHE_NAME = "dulca-palets-v2";
 
 const APP_FILES = [
   "./",
