@@ -1,10 +1,12 @@
-const CACHE_NAME = "dulca-palets-v2";
+const CACHE_NAME = "dulca-palets-v3";
 
 const APP_FILES = [
   "./",
   "./index.html",
   "./manifest.json",
   "./service-worker.js",
+  "./icon-192.png",
+  "./icon-512.png",
   "./Logo Dulca Familiar_Mesa de trabajo.png"
 ];
 
