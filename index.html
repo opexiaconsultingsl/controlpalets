@@ -262,7 +262,7 @@
 
         <div>
           <h1>Registro de Palets</h1>
-          <p>Control offline de movimientos logísticos</p>
+          <p>Control de movimientos de palets LPR y CHEP</p>
         </div>
       </div>
 
@@ -475,12 +475,23 @@
       const node = template.content.cloneNode(true);
       const select = node.querySelector(".tipoPalet");
 
-      PALET_TYPES.forEach(type => {
-        const option = document.createElement("option");
-        option.value = type;
-        option.textContent = type;
-        select.appendChild(option);
-      });
+
+
+        const defaultOption = document.createElement("option");
+defaultOption.value = "";
+defaultOption.textContent = "Seleccione palet";
+defaultOption.disabled = true;
+defaultOption.selected = true;
+select.appendChild(defaultOption);
+
+PALET_TYPES.forEach(type => {
+  const option = document.createElement("option");
+  option.value = type;
+  option.textContent = type;
+  select.appendChild(option);
+});
+
+      
 
       node.querySelector(".removeLine").addEventListener("click", event => {
         if (lines.children.length <= 1) return;
@@ -495,7 +506,7 @@
 
       statusEl.textContent = online
         ? "🟢 Online"
-        : "🔴 Offline";
+        : "🔴 Sin conexión";
 
       statusEl.classList.toggle("online", online);
     }
