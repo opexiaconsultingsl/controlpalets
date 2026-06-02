@@ -134,11 +134,11 @@
       border-color: var(--dulca-gold);
     }
 
-    .grid {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 16px;
-    }
+.grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
 
     .section-head {
       display: flex;
@@ -278,41 +278,75 @@
       <form id="form">
 
         <div class="grid">
+<label>
+  Fecha documento
+  <input id="fechaDocumento" type="date" required>
+</label>
 
-          <label>
-            Fecha documento
-            <input id="fechaDocumento" type="date" required>
-          </label>
+<label>
+  Nº de Albarán
+  <input
+    id="numeroAlbaran"
+    type="text"
+    placeholder="Ej: ALB-2026-001"
+    required
+  >
+</label>
 
-          <label>
-            Nº de Albarán
-            <input
-              id="numeroAlbaran"
-              type="text"
-              placeholder="Ej: ALB-2026-001"
-              required
-            >
-          </label>
+<label>
+  Operación
+  <select id="operacion" required>
+    <option value="" selected disabled>Selecciona operación</option>
+    <option value="Descarga">Descarga</option>
+    <option value="Carga">Carga</option>
+  </select>
+</label>
 
-          <label>
-            Lugar
-            <input
-              id="origenDestino"
-              type="text"
-              placeholder="Cliente / Origen / Destino"
-              required
-            >
-          </label>
+<label>
+  Responsable
+  <input
+    id="responsable"
+    list="responsablesList"
+    type="text"
+    placeholder="Selecciona o escribe"
+    required
+  >
 
-          <label>
-            Operación
-<select id="operacion" required>
-  <option value="" selected disabled>Selecciona operación</option>
-  <option value="Descarga">Descarga</option>
-  <option value="Carga">Carga</option>
-</select>
-          </label>
+  <datalist id="responsablesList">
+    <option value="Alberto Gómez">
+    <option value="Alberto Santamaría">
+    <option value="Edu">
+    <option value="David">
+    <option value="Marcelino">
+    <option value="Héctor">
+    <option value="Iván Fraile">
+    <option value="Iván">
+    <option value="Alba">
+    <option value="Amanda">
+    <option value="Jose">
+    <option value="Otro">
+  </datalist>
+</label>
 
+<label>
+  Origen
+  <select id="origen" required>
+    <option value="Dulca" selected>Dulca</option>
+    <option value="Autroestrela">Autroestrela</option>
+  </select>
+</label>
+
+<label>
+  Lugar
+  <input
+    id="origenDestino"
+    type="text"
+    placeholder="Cliente / Origen / Destino"
+    required
+  >
+</label>
+
+          
         </div>
 
         <div class="section-head">
@@ -483,8 +517,10 @@
           <strong>
             ${escapeHtml(item.fechaDocumento)}
             · Alb. ${escapeHtml(item.numeroAlbaran)}
-            · ${escapeHtml(item.operacion)}
-            · ${escapeHtml(item.origenDestino)}
+· ${escapeHtml(item.operacion)}
+· ${escapeHtml(item.responsable)}
+· ${escapeHtml(item.origen)}
+· ${escapeHtml(item.origenDestino)}
           </strong>
           <br>
           ${escapeHtml(item.tipoPalet)}
@@ -506,31 +542,41 @@
       const operacion =
         document.getElementById("operacion").value;
 
+      const responsable =
+  document.getElementById("responsable").value.trim();
+
+const origen =
+  document.getElementById("origen").value;
+
       const movementId = crypto.randomUUID();
       const createdAt = new Date().toISOString();
 
       return [...document.querySelectorAll(".line")]
-        .map(line => ({
-          id: crypto.randomUUID(),
-          movementId,
-          fechaDocumento,
-          numeroAlbaran,
-          origenDestino,
-          operacion,
-          tipoPalet: line.querySelector(".tipoPalet").value,
-          cantidad: Number(line.querySelector(".cantidad").value),
-          createdAt,
-          syncedAt: ""
-        }))
-        .filter(record =>
-          record.fechaDocumento &&
-          record.numeroAlbaran &&
-          record.origenDestino &&
-          record.operacion &&
-          record.tipoPalet &&
-          Number.isFinite(record.cantidad) &&
-          record.cantidad > 0
-        );
+.map(line => ({
+  id: crypto.randomUUID(),
+  movementId,
+  fechaDocumento,
+  numeroAlbaran,
+  origenDestino,
+  operacion,
+  responsable,
+  origen,
+  tipoPalet: line.querySelector(".tipoPalet").value,
+  cantidad: Number(line.querySelector(".cantidad").value),
+  createdAt,
+  syncedAt: ""
+}))
+    .filter(record =>
+  record.fechaDocumento &&
+  record.numeroAlbaran &&
+  record.origenDestino &&
+  record.operacion &&
+  record.responsable &&
+  record.origen &&
+  record.tipoPalet &&
+  Number.isFinite(record.cantidad) &&
+  record.cantidad > 0
+);
     }
 
     async function syncQueue() {
