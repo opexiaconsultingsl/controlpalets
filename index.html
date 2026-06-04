@@ -249,6 +249,18 @@
         width: 170px;
       }
     }
+
+    #versionInfo {
+  position: fixed;
+  bottom: 6px;
+  right: 10px;
+  font-size: 11px;
+  color: #999;
+  opacity: 0.8;
+  z-index: 9999;
+}
+
+    
   </style>
 </head>
 
@@ -430,7 +442,8 @@
 
   </template>
 
-
+<div id="versionInfo"></div>
+  
     <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
   
   <script>
@@ -806,10 +819,15 @@ updateStatus();
 if ("serviceWorker" in navigator) {
   navigator.serviceWorker.register("./service-worker.js");
 }
+    
+document.getElementById("versionInfo").textContent =
+  "v" + APP_VERSION;
 
+    
     comprobarVersionApp();
     cargarHistoricoAlbaranes();
   </script>
 
+  
 </body>
 </html>
