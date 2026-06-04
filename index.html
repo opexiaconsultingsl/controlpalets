@@ -896,12 +896,20 @@ form.addEventListener("submit", async event => {
   // NUEVO BLOQUE
 if (!historicoCargado) {
 
-  const continuar = await confirmarAlbaranDuplicado(
-    "Histórico no cargado. No será posible comprobar albaranes duplicados."
-  );
 
-  if (!continuar) return;
+ocultarCarga();
+
+const continuar = await confirmarAlbaranDuplicado(
+  "Histórico no cargado. No será posible comprobar albaranes duplicados."
+);
+
+if (!continuar) return;
+
+mostrarCarga();
 }
+
+
+  
 
   const numeroAlbaran = normalizarAlbaran(records[0].numeroAlbaran);
 
@@ -924,9 +932,13 @@ if (
   duplicadoPendiente ||
   duplicadoServidor
 ) {
-  const confirmar = await confirmarAlbaranDuplicado(records[0].numeroAlbaran);
+ocultarCarga();
 
-  if (!confirmar) return;
+const confirmar = await confirmarAlbaranDuplicado(records[0].numeroAlbaran);
+
+if (!confirmar) return;
+
+mostrarCarga();
 }
 
 
