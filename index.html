@@ -260,6 +260,81 @@
   z-index: 9999;
 }
 
+.hidden {
+  display: none !important;
+}
+
+.modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.38);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  z-index: 10000;
+}
+
+.modal-card {
+  width: min(390px, 100%);
+  background: var(--white);
+  border-radius: 22px;
+  border: 2px solid var(--dulca-red-dark);
+  box-shadow: 0 18px 45px rgba(143, 29, 27, .28);
+  padding: 24px;
+  text-align: center;
+}
+
+.modal-title {
+  font-size: 22px;
+  font-weight: 950;
+  color: var(--dulca-red-dark);
+  margin-bottom: 10px;
+}
+
+.modal-text {
+  font-size: 18px;
+  font-weight: 750;
+  color: var(--text);
+  margin-bottom: 22px;
+  line-height: 1.35;
+}
+
+.modal-albaran {
+  display: inline-block;
+  margin-top: 10px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: #fff3cd;
+  color: #6b3f00;
+  font-weight: 900;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 12px;
+}
+
+.modal-btn {
+  flex: 1;
+  padding: 15px;
+  border-radius: 14px;
+  border: 0;
+  font-size: 17px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.modal-btn.primary {
+  background: var(--dulca-red);
+  color: white;
+}
+
+.modal-btn.secondary {
+  background: #fee2e2;
+  color: var(--dulca-red-dark);
+}
+
     
   </style>
 </head>
@@ -443,6 +518,34 @@
   </template>
 
 <div id="versionInfo"></div>
+
+    <div id="duplicateModal" class="modal hidden">
+  <div class="modal-card">
+    <div class="modal-title">
+      ALBARÁN DUPLICADO
+    </div>
+
+    <div class="modal-text" id="duplicateText">
+      ¿Registrar?
+    </div>
+
+    <div class="modal-actions">
+      <button
+        id="btnDuplicateNo"
+        type="button"
+        class="modal-btn secondary">
+        No
+      </button>
+
+      <button
+        id="btnDuplicateYes"
+        type="button"
+        class="modal-btn primary">
+        Sí
+      </button>
+    </div>
+  </div>
+</div>
   
   
   <script>
@@ -471,6 +574,52 @@
     const statusEl = document.getElementById("status");
     const pendingCount = document.getElementById("pendingCount");
     const pendingList = document.getElementById("pendingList");
+
+
+    const duplicateModal = document.getElementById("duplicateModal");
+const duplicateText = document.getElementById("duplicateText");
+const btnDuplicateNo = document.getElementById("btnDuplicateNo");
+const btnDuplicateYes = document.getElementById("btnDuplicateYes");
+
+let pendingDuplicateResolver = null;
+
+function confirmarAlbaranDuplicado(numeroAlbaran) {
+  duplicateText.innerHTML = `
+    El nº de albarán duplicado es:
+    <br>
+    <span class="modal-albaran">${escapeHtml(numeroAlbaran)}</span>
+    <br><br>
+    ¿Desea registrarlo igualmente?
+  `;
+
+  duplicateModal.classList.remove("hidden");
+
+  return new Promise(resolve => {
+    pendingDuplicateResolver = resolve;
+  });
+}
+
+function cerrarModalDuplicado() {
+  duplicateModal.classList.add("hidden");
+}
+
+btnDuplicateNo.addEventListener("click", () => {
+  cerrarModalDuplicado();
+
+  if (pendingDuplicateResolver) {
+    pendingDuplicateResolver(false);
+    pendingDuplicateResolver = null;
+  }
+});
+
+btnDuplicateYes.addEventListener("click", () => {
+  cerrarModalDuplicado();
+
+  if (pendingDuplicateResolver) {
+    pendingDuplicateResolver(true);
+    pendingDuplicateResolver = null;
+  }
+});
 
     function getQueue() {
       return JSON.parse(localStorage.getItem(STORAGE_QUEUE) || "[]");
@@ -697,22 +846,25 @@ form.addEventListener("submit", async event => {
   if (!records.length) return;
 
   // NUEVO BLOQUE
-  if (!historicoCargado) {
+if (!historicoCargado) {
 
-    const continuar = confirm(
-      "No se ha podido cargar el histórico de albaranes. La comprobación de duplicados puede no ser fiable. ¿Desea continuar?"
-    );
+  const continuar = await confirmarAlbaranDuplicado(
+    "Histórico no cargado. No será posible comprobar albaranes duplicados."
+  );
 
-    if (!continuar) return;
-  }
+  if (!continuar) return;
+}
 
   const numeroAlbaran = normalizarAlbaran(records[0].numeroAlbaran);
 
 const duplicadoHistorico =
   historicoAlbaranes.has(numeroAlbaran);
 
-const duplicadoServidor =
-  await existeAlbaranServidor(numeroAlbaran);
+let duplicadoServidor = false;
+
+if (navigator.onLine) {
+  duplicadoServidor = await existeAlbaranServidor(numeroAlbaran);
+}
 
 const duplicadoPendiente =
   getQueue().some(item =>
@@ -724,12 +876,10 @@ if (
   duplicadoPendiente ||
   duplicadoServidor
 ) {
-    const confirmar = confirm(
-      "Advertencia: nº de albarán duplicado. ¿Seguro que desea registrarlo?"
-    );
+  const confirmar = await confirmarAlbaranDuplicado(records[0].numeroAlbaran);
 
-    if (!confirmar) return;
-  }
+  if (!confirmar) return;
+}
 
   setQueue([
     ...getQueue(),
@@ -802,15 +952,34 @@ async function existeAlbaranServidor(numeroAlbaran) {
 
   if (!navigator.onLine) return false;
 
-  const response = await fetch(
-    APPS_SCRIPT_URL +
-    "?action=existeAlbaran&numero=" +
-    encodeURIComponent(numeroAlbaran)
-  );
+  const controller = new AbortController();
 
-  const data = await response.json();
+  const timeout = setTimeout(() => {
+    controller.abort();
+  }, 2500);
 
-  return !!data.existe;
+  try {
+    const response = await fetch(
+      APPS_SCRIPT_URL +
+      "?action=existeAlbaran&numero=" +
+      encodeURIComponent(numeroAlbaran) +
+      "&t=" + Date.now(),
+      {
+        signal: controller.signal
+      }
+    );
+
+    const data = await response.json();
+
+    return !!data.existe;
+
+  } catch (error) {
+    console.warn("No se pudo comprobar el albarán en servidor", error);
+    return false;
+
+  } finally {
+    clearTimeout(timeout);
+  }
 }
     
     document
@@ -846,6 +1015,8 @@ document.getElementById("versionInfo").textContent =
     comprobarVersionApp();
     cargarHistoricoAlbaranes();
   </script>
+
+
 
   
 </body>
