@@ -430,6 +430,9 @@
 
   </template>
 
+
+    <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+  
   <script>
     const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxYQapL6YBZYKvK8yoPrdXA9IzPhSsqEKWf0M4o9WR4IR8MpdWS2byiJRb4ea3v6iQRVw/exec";
 
@@ -446,6 +449,9 @@
     ];
 
     const STORAGE_QUEUE = "dulca_palets_queue_v1";
+
+    const APP_VERSION = "1.0.0";
+
 
     const form = document.getElementById("form");
     const lines = document.getElementById("lines");
@@ -502,6 +508,7 @@ PALET_TYPES.forEach(type => {
 
       lines.appendChild(node);
     }
+
 
     function updateStatus() {
       const online = navigator.onLine;
@@ -622,57 +629,186 @@ const origen =
       setQueue(failed);
     }
 
-    form.addEventListener("submit", event => {
-      event.preventDefault();
 
-      const records = buildRecords();
 
-      if (!records.length) return;
+    async function comprobarVersionApp() {
+  try {
+    if (!navigator.onLine) return;
 
-      setQueue([
-        ...getQueue(),
-        ...records
-      ]);
+    const response = await fetch(APPS_SCRIPT_URL + "?action=version&t=" + Date.now());
+    const data = await response.json();
 
-      form.reset();
+if (data.version && data.version !== APP_VERSION) {
 
-      document.getElementById("fechaDocumento").value =
-        new Date().toISOString().slice(0, 10);
+  if ("caches" in window) {
+    const keys = await caches.keys();
 
-      lines.innerHTML = "";
-
-      addPaletLine();
-
-      if (navigator.onLine) {
-        syncQueue();
-      }
-    });
-
-    document
-      .getElementById("addLine")
-      .addEventListener("click", addPaletLine);
-
-    document
-      .getElementById("syncNow")
-      .addEventListener("click", syncQueue);
-
-    window.addEventListener("online", () => {
-      updateStatus();
-      syncQueue();
-    });
-
-    window.addEventListener("offline", updateStatus);
-
-    document.getElementById("fechaDocumento").value =
-      new Date().toISOString().slice(0, 10);
-
-    addPaletLine();
-    renderPending();
-    updateStatus();
-
-    if ("serviceWorker" in navigator) {
-      navigator.serviceWorker.register("./service-worker.js");
+    for (const key of keys) {
+      await caches.delete(key);
     }
+  }
+
+  document.body.innerHTML = `
+    <div style="
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      height:100vh;
+      text-align:center;
+      padding:30px;
+      font-family:sans-serif;
+    ">
+      <div>
+        <h2>Aplicación actualizada</h2>
+        <p>Existe una nueva versión (${data.version}).</p>
+        <p>Cierre completamente la aplicación y vuelva a abrirla.</p>
+      </div>
+    </div>
+  `;
+
+  return;
+}
+  } catch (error) {
+    console.warn("No se pudo comprobar la versión de la app", error);
+  }
+}
+
+form.addEventListener("submit", async event => {
+  event.preventDefault();
+
+  const records = buildRecords();
+
+  if (!records.length) return;
+
+  // NUEVO BLOQUE
+  if (!historicoCargado) {
+
+    const continuar = confirm(
+      "No se ha podido cargar el histórico de albaranes. La comprobación de duplicados puede no ser fiable. ¿Desea continuar?"
+    );
+
+    if (!continuar) return;
+  }
+
+  const numeroAlbaran = normalizarAlbaran(records[0].numeroAlbaran);
+
+  const duplicadoHistorico =
+    historicoAlbaranes.has(numeroAlbaran);
+
+  const duplicadoPendiente =
+    getQueue().some(item =>
+      normalizarAlbaran(item.numeroAlbaran) === numeroAlbaran
+    );
+
+  if (duplicadoHistorico || duplicadoPendiente) {
+    const confirmar = confirm(
+      "Advertencia: nº de albarán duplicado. ¿Seguro que desea registrarlo?"
+    );
+
+    if (!confirmar) return;
+  }
+
+  setQueue([
+    ...getQueue(),
+    ...records
+  ]);
+
+  form.reset();
+
+  document.getElementById("fechaDocumento").value =
+    new Date().toISOString().slice(0, 10);
+
+  lines.innerHTML = "";
+
+  addPaletLine();
+
+  if (navigator.onLine) {
+    syncQueue();
+  }
+});
+
+
+
+          const HISTORICO_XLSX_URL =
+  "https://docs.google.com/spreadsheets/d/e/2PACX-1vRxVf1uFSnenKZ1XSNlmBdpgTxAAsvvkOKUUkT5BjOJAwybc7tmoiIba0j78D-ulQZ2p66oum8T7_cD/pub?output=xlsx";
+
+let historicoAlbaranes = new Set();
+
+let historicoCargado = false;
+
+function normalizarAlbaran(value) {
+  return String(value ?? "")
+    .trim()
+    .toUpperCase()
+    .replace(/\s+/g, "");
+}
+
+async function cargarHistoricoAlbaranes() {
+  try {
+    const response = await fetch(HISTORICO_XLSX_URL);
+
+    if (!response.ok) {
+      throw new Error("No se pudo descargar el histórico");
+    }
+
+    const arrayBuffer = await response.arrayBuffer();
+
+    const workbook = XLSX.read(arrayBuffer, { type: "array" });
+    const sheet = workbook.Sheets[workbook.SheetNames[0]];
+    const rows = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+
+    historicoAlbaranes = new Set(
+      rows
+        .map(row => normalizarAlbaran(row[4]))
+        .filter(Boolean)
+    );
+
+    historicoCargado = true;
+
+    statusEl.textContent = "🟢 Online";
+    statusEl.classList.add("online");
+
+  } catch (error) {
+
+    historicoCargado = false;
+
+    statusEl.textContent =
+      "⚠️ Histórico no cargado";
+
+    statusEl.classList.remove("online");
+
+    console.error(error);
+  }
+}
+
+    document
+  .getElementById("addLine")
+  .addEventListener("click", addPaletLine);
+
+document
+  .getElementById("syncNow")
+  .addEventListener("click", syncQueue);
+
+window.addEventListener("online", () => {
+  updateStatus();
+  syncQueue();
+});
+
+window.addEventListener("offline", updateStatus);
+
+document.getElementById("fechaDocumento").value =
+  new Date().toISOString().slice(0, 10);
+
+addPaletLine();
+renderPending();
+updateStatus();
+
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("./service-worker.js");
+}
+
+    comprobarVersionApp();
+    cargarHistoricoAlbaranes();
   </script>
 
 </body>
