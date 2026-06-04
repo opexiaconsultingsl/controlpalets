@@ -335,6 +335,34 @@
   color: var(--dulca-red-dark);
 }
 
+
+
+    .loading-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(255,255,255,.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 20000;
+}
+
+.loading-card {
+  background: white;
+  padding: 24px 32px;
+  border-radius: 18px;
+  border: 2px solid var(--dulca-red);
+  box-shadow: 0 15px 40px rgba(0,0,0,.15);
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--dulca-red-dark);
+}
+
+.hidden {
+  display: none !important;
+}
+
+    
     
   </style>
 </head>
@@ -546,7 +574,12 @@
     </div>
   </div>
 </div>
-  
+
+  <div id="loadingOverlay" class="loading-overlay hidden">
+  <div class="loading-card">
+    ⏳ Guardando movimiento...
+  </div>
+</div>
   
   <script>
     const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxYQapL6YBZYKvK8yoPrdXA9IzPhSsqEKWf0M4o9WR4IR8MpdWS2byiJRb4ea3v6iQRVw/exec";
@@ -580,6 +613,17 @@
 const duplicateText = document.getElementById("duplicateText");
 const btnDuplicateNo = document.getElementById("btnDuplicateNo");
 const btnDuplicateYes = document.getElementById("btnDuplicateYes");
+
+    const loadingOverlay =
+  document.getElementById("loadingOverlay");
+
+function mostrarCarga() {
+  loadingOverlay.classList.remove("hidden");
+}
+
+function ocultarCarga() {
+  loadingOverlay.classList.add("hidden");
+}
 
 let pendingDuplicateResolver = null;
 
@@ -841,6 +885,10 @@ if (data.version && data.version !== APP_VERSION) {
 form.addEventListener("submit", async event => {
   event.preventDefault();
 
+  mostrarCarga();
+
+  try {
+
   const records = buildRecords();
 
   if (!records.length) return;
@@ -881,23 +929,29 @@ if (
   if (!confirmar) return;
 }
 
-  setQueue([
-    ...getQueue(),
-    ...records
-  ]);
 
-  form.reset();
+setQueue([
+  ...getQueue(),
+  ...records
+]);
 
-  document.getElementById("fechaDocumento").value =
-    new Date().toISOString().slice(0, 10);
+form.reset();
 
-  lines.innerHTML = "";
+document.getElementById("fechaDocumento").value =
+  new Date().toISOString().slice(0, 10);
 
-  addPaletLine();
+lines.innerHTML = "";
 
-  if (navigator.onLine) {
-    syncQueue();
-  }
+addPaletLine();
+
+if (navigator.onLine) {
+  syncQueue();
+}
+
+} finally {
+  ocultarCarga();
+}
+
 });
 
 
