@@ -444,7 +444,6 @@
 
 <div id="versionInfo"></div>
   
-    <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
   
   <script>
     const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxYQapL6YBZYKvK8yoPrdXA9IzPhSsqEKWf0M4o9WR4IR8MpdWS2byiJRb4ea3v6iQRVw/exec";
@@ -742,9 +741,7 @@ form.addEventListener("submit", async event => {
 
 
 
-          const HISTORICO_XLSX_URL =
-  "https://docs.google.com/spreadsheets/d/e/2PACX-1vRxVf1uFSnenKZ1XSNlmBdpgTxAAsvvkOKUUkT5BjOJAwybc7tmoiIba0j78D-ulQZ2p66oum8T7_cD/pub?output=xlsx";
-
+   
 let historicoAlbaranes = new Set();
 
 let historicoCargado = false;
@@ -758,21 +755,19 @@ function normalizarAlbaran(value) {
 
 async function cargarHistoricoAlbaranes() {
   try {
-    const response = await fetch(HISTORICO_XLSX_URL);
+    const response = await fetch(
+      APPS_SCRIPT_URL + "?action=albaranes&t=" + Date.now()
+    );
 
-    if (!response.ok) {
-      throw new Error("No se pudo descargar el histórico");
+    const data = await response.json();
+
+    if (!data.ok) {
+      throw new Error("Respuesta no válida del histórico");
     }
 
-    const arrayBuffer = await response.arrayBuffer();
-
-    const workbook = XLSX.read(arrayBuffer, { type: "array" });
-    const sheet = workbook.Sheets[workbook.SheetNames[0]];
-    const rows = XLSX.utils.sheet_to_json(sheet, { header: 1 });
-
     historicoAlbaranes = new Set(
-      rows
-        .map(row => normalizarAlbaran(row[4]))
+      data.albaranes
+        .map(normalizarAlbaran)
         .filter(Boolean)
     );
 
@@ -782,12 +777,9 @@ async function cargarHistoricoAlbaranes() {
     statusEl.classList.add("online");
 
   } catch (error) {
-
     historicoCargado = false;
 
-    statusEl.textContent =
-      "⚠️ Histórico no cargado";
-
+    statusEl.textContent = "⚠️ Histórico no cargado";
     statusEl.classList.remove("online");
 
     console.error(error);
