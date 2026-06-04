@@ -622,17 +622,21 @@ const origen =
 
       for (const record of queue) {
         try {
-          await fetch(APPS_SCRIPT_URL, {
-            method: "POST",
-            mode: "no-cors",
-            headers: {
-              "Content-Type": "text/plain;charset=utf-8"
-            },
-            body: JSON.stringify({
-              ...record,
-              syncedAt: new Date().toISOString()
-            })
-          });
+ await fetch(APPS_SCRIPT_URL, {
+  method: "POST",
+  mode: "no-cors",
+  headers: {
+    "Content-Type": "text/plain;charset=utf-8"
+  },
+  body: JSON.stringify({
+    ...record,
+    syncedAt: new Date().toISOString()
+  })
+});
+
+historicoAlbaranes.add(
+  normalizarAlbaran(record.numeroAlbaran)
+);
         } catch {
           failed.push(record);
         }
@@ -704,15 +708,22 @@ form.addEventListener("submit", async event => {
 
   const numeroAlbaran = normalizarAlbaran(records[0].numeroAlbaran);
 
-  const duplicadoHistorico =
-    historicoAlbaranes.has(numeroAlbaran);
+const duplicadoHistorico =
+  historicoAlbaranes.has(numeroAlbaran);
 
-  const duplicadoPendiente =
-    getQueue().some(item =>
-      normalizarAlbaran(item.numeroAlbaran) === numeroAlbaran
-    );
+const duplicadoServidor =
+  await existeAlbaranServidor(numeroAlbaran);
 
-  if (duplicadoHistorico || duplicadoPendiente) {
+const duplicadoPendiente =
+  getQueue().some(item =>
+    normalizarAlbaran(item.numeroAlbaran) === numeroAlbaran
+  );
+
+if (
+  duplicadoHistorico ||
+  duplicadoPendiente ||
+  duplicadoServidor
+) {
     const confirmar = confirm(
       "Advertencia: nº de albarán duplicado. ¿Seguro que desea registrarlo?"
     );
@@ -786,6 +797,22 @@ async function cargarHistoricoAlbaranes() {
   }
 }
 
+
+async function existeAlbaranServidor(numeroAlbaran) {
+
+  if (!navigator.onLine) return false;
+
+  const response = await fetch(
+    APPS_SCRIPT_URL +
+    "?action=existeAlbaran&numero=" +
+    encodeURIComponent(numeroAlbaran)
+  );
+
+  const data = await response.json();
+
+  return !!data.existe;
+}
+    
     document
   .getElementById("addLine")
   .addEventListener("click", addPaletLine);
